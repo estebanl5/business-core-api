@@ -88,10 +88,3 @@ Design an **enterprise example API** that combines **CRM (Customer Relationship 
 | `/employees/{id}`         | DELETE | `hr.admin`            |
 
 ---
-
-## 🧩 Prompt Usage
-This PRD can be used with LLMs to:  
-- Generate **OpenAPI 3.0 specification (Swagger YAML/JSON)**.  
-- Create backend code stubs (Node.js, .NET, Python).  
-- Define test cases (Postman collections, unit tests).  
-- Draft CI/CD pipelines for Azure.  
