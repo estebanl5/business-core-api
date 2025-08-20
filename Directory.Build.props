@@ -1,0 +1,54 @@
+<Project>
+  <PropertyGroup>
+    <!-- Target Framework -->
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion> <!-- or 'latestMajor' if you want stability -->
+
+    <!-- Nullable & Implicit Usings -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Warnings & Analyzer Strictness -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <WarningsAsErrors>nullable;CS8600;CS8602;CS8618;CS8625</WarningsAsErrors> <!-- Focus on nullability -->
+
+    <!-- Async Best Practices -->
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <AsyncFunctionReturnsTaskWarning>true</AsyncFunctionReturnsTaskWarning>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CA1707;CA2007</NoWarn>
+    <!--
+      CA2007 = Do not directly await a Task without ConfigureAwait(false).
+      Suppressed because .NET Core apps generally don't need ConfigureAwait(false).
+    -->
+
+    <!-- Trimming / AOT safety for future proofing -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+  </PropertyGroup>
+
+  <!-- Code Analysis & Style -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.*" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.*" PrivateAssets="all" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.14.*" PrivateAssets="all" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.15.*" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Test Libraries (applies only to test projects if you want via Condition) -->
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="xunit" Version="2.9.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1" />
+    <PackageReference Include="Moq" Version="4.20.70" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+  </ItemGroup>
+
+  <!--Exclude generated .editorconfig files from build input generation which improves cache hits for builds where source hasn't changed-->
+  <ItemGroup>
+    <Compile Remove="*.editorconfig" />
+  </ItemGroup>
+</Project>

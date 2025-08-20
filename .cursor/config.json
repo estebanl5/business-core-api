@@ -1,0 +1,36 @@
+{
+  "defaultLanguage": "csharp",
+  "context": {
+    "include": [
+      "PRD.md",
+      "src/**/*.cs",
+      "tests/**/*.cs",
+      "src/**/*.csproj",
+      "Directory.Build.props",
+      "appsettings*.json"
+    ]
+  },
+  "mcpServers": {
+    "filesystem": {
+      "enabled": true,
+      "root": "."
+    },
+    "git": {
+      "enabled": true
+    }
+  },
+  "style": {
+    "indent": 4,
+    "useTabs": false,
+    "lineLength": 150,
+    "nullable": true,
+    "async": "always",
+    "analyzers": [
+      "Microsoft.CodeAnalysis.NetAnalyzers",
+      "StyleCop.Analyzers"
+    ]
+  },
+  "testFramework": "xunit",
+  "mocking": "moq",
+  "assertions": "fluentassertions"
+}
