@@ -339,3 +339,179 @@ var policy = Policy.Handle<HttpRequestException>()
 - POST with same `Idempotency-Key` returns identical response within 24h.
 - Webhook retries up to 24h with exponential backoff, then DLQ.
 
+## 19) Database Schema (Draft ERD + SQL DDL)
+
+### Entity Relationship Overview
+- **Customer (1) → (M) Opportunity**
+- **Employee (1) → (M) Leave**
+- **Employee (1) → (M) Employee (Manager relation)**
+
+### Draft Schema (SQL Server / EF Core Compatible)
+```sql
+CREATE TABLE Customers (
+  Id UNIQUEIDENTIFIER PRIMARY KEY,
+  Name NVARCHAR(200) NOT NULL,
+  PrimaryEmail NVARCHAR(254) NOT NULL UNIQUE,
+  Status NVARCHAR(50) NOT NULL,
+  CreatedAtUtc DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+  RowVersion ROWVERSION
+);
+
+CREATE TABLE Opportunities (
+  Id UNIQUEIDENTIFIER PRIMARY KEY,
+  CustomerId UNIQUEIDENTIFIER NOT NULL,
+  Stage NVARCHAR(50) NOT NULL,
+  OwnerId UNIQUEIDENTIFIER NOT NULL,
+  Amount DECIMAL(18,2) NOT NULL,
+  CloseDate DATE,
+  RowVersion ROWVERSION,
+  FOREIGN KEY (CustomerId) REFERENCES Customers(Id)
+);
+
+CREATE TABLE Employees (
+  Id UNIQUEIDENTIFIER PRIMARY KEY,
+  Name NVARCHAR(200) NOT NULL,
+  Email NVARCHAR(254) NOT NULL UNIQUE,
+  Department NVARCHAR(100),
+  ManagerId UNIQUEIDENTIFIER NULL,
+  HireDate DATE NOT NULL,
+  Status NVARCHAR(50) NOT NULL,
+  RowVersion ROWVERSION,
+  FOREIGN KEY (ManagerId) REFERENCES Employees(Id)
+);
+
+CREATE TABLE Leaves (
+  Id UNIQUEIDENTIFIER PRIMARY KEY,
+  EmployeeId UNIQUEIDENTIFIER NOT NULL,
+  StartDate DATE NOT NULL,
+  EndDate DATE NOT NULL,
+  Type NVARCHAR(50) NOT NULL,
+  Status NVARCHAR(20) NOT NULL,
+  FOREIGN KEY (EmployeeId) REFERENCES Employees(Id)
+);
+
+## 20) OpenAPI Contract Snippets (OAS 3.0)
+```
+paths:
+  /customers:
+    get:
+      summary: List customers
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: page[size]
+          schema: { type: integer, default: 25 }
+        - in: query
+          name: page[number]
+          schema: { type: integer, default: 1 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+    post:
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+  /customers/{id}:
+    get:
+      summary: Get customer by Id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+				
+components:
+  schemas:
+    Customer:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        primaryEmail: { type: string, format: email }
+        status: { type: string }
+        createdAtUtc: { type: string, format: date-time }
+
+    CustomerCreateRequest:
+      type: object
+      required: [name, primaryEmail]
+      properties:
+        name: { type: string }
+        primaryEmail: { type: string, format: email }
+```
+
+##21) Solution / Folder Structure
+```
+src/
+  Api/                      # ASP.NET Core entrypoint (controllers, filters, ProblemDetails middleware)
+    Controllers/
+    Filters/
+    Middlewares/
+  Application/              # CQRS layer (MediatR commands, queries, validators)
+    Commands/
+    Queries/
+    Behaviors/
+  Domain/                   # Entities, Aggregates, Value Objects, Domain Events
+    Customers/
+    Opportunities/
+    Employees/
+    Leaves/
+  Infrastructure/           # EF Core, repositories, service bus, caching, outbox
+    Persistence/
+    Messaging/
+    Configurations/
+  Shared/                   # Cross-cutting abstractions (IClock, CorrelationId, base classes)
+
+tests/
+  UnitTests/                # Domain + Application tests
+  IntegrationTests/         # EF Core + API tests with Testcontainers
+  ContractTests/            # OpenAPI + Webhook signature tests
+
+build/
+  pipelines/                # CI/CD templates, infra as code (Bicep/Terraform)
+```
+
+##22) Example Payloads (for Testing & Cursor)
+Request
+```json
+POST /api/v1/customers
+{
+  "name": "Acme Corporation",
+  "primaryEmail": "info@acme.com"
+}
+```
+Response
+```json
+{
+  "id": "c2b2f4a2-7d4a-44a0-9d92-2f9e12a7f4e0",
+  "name": "Acme Corporation",
+  "primaryEmail": "info@acme.com",
+  "status": "Active",
+  "createdAtUtc": "2025-08-20T17:42:00Z"
+}
+```
