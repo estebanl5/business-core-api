@@ -205,7 +205,7 @@ Invariants live in aggregates; cross-aggregate coordination uses domain events +
 ## 15) Sample C# Patterns (Escaped Blocks)
 
 **MediatR Command (CreateCustomer)**
-\`\`\`csharp
+```csharp
 public sealed record CreateCustomerCommand(string Name, string Email) : IRequest<CustomerId>;
 
 public sealed class CreateCustomerHandler : IRequestHandler<CreateCustomerCommand, CustomerId>
@@ -227,10 +227,10 @@ public sealed class CreateCustomerHandler : IRequestHandler<CreateCustomerComman
         return customer.Id;
     }
 }
-\`\`\`
+```
 
 **Pipeline Behavior (Idempotency)**
-\`\`\`csharp
+```csharp
 public sealed class IdempotencyBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
@@ -253,10 +253,10 @@ public sealed class IdempotencyBehavior<TRequest, TResponse> : IPipelineBehavior
         return response;
     }
 }
-\`\`\`
+```
 
 **Problem Details Middleware (Mapping Exceptions)**
-\`\`\`csharp
+```csharp
 app.UseExceptionHandler(errApp =>
 {
     errApp.Run(async ctx =>
@@ -277,10 +277,10 @@ app.UseExceptionHandler(errApp =>
         await ctx.Response.WriteAsJsonAsync(problem);
     });
 });
-\`\`\`
+```
 
 **EF Core Entity Configuration (Value Objects & Concurrency)**
-\`\`\`csharp
+```csharp
 public sealed class CustomerConfig : IEntityTypeConfiguration<Customer>
 {
     public void Configure(EntityTypeBuilder<Customer> b)
@@ -305,17 +305,17 @@ public sealed class CustomerConfig : IEntityTypeConfiguration<Customer>
         b.HasIndex("PrimaryEmail").IsUnique();
     }
 }
-\`\`\`
+```
 
 **Polly Resilience Handler for Service Bus/Webhook Post**
-\`\`\`csharp
+```csharp
 var jitter = new Random();
 var policy = Policy.Handle<HttpRequestException>()
     .OrResult<HttpResponseMessage>(r => (int)r.StatusCode >= 500 || r.StatusCode == HttpStatusCode.RequestTimeout)
     .WaitAndRetryAsync(5, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)) + TimeSpan.FromMilliseconds(jitter.Next(0, 250)))
     .WrapAsync(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(10)))
     .WrapAsync(Policy.BulkheadAsync<HttpResponseMessage>(maxParallelization: 50, maxQueuingActions: 100));
-\`\`\`
+```
 
 ---
 
@@ -389,6 +389,7 @@ CREATE TABLE Leaves (
   Status NVARCHAR(20) NOT NULL,
   FOREIGN KEY (EmployeeId) REFERENCES Employees(Id)
 );
+```
 
 ## 20) OpenAPI Contract Snippets (OAS 3.0)
 ```
@@ -465,7 +466,7 @@ components:
         primaryEmail: { type: string, format: email }
 ```
 
-##21) Solution / Folder Structure
+## 21) Solution / Folder Structure
 ```
 src/
   Api/                      # ASP.NET Core entrypoint (controllers, filters, ProblemDetails middleware)
@@ -496,7 +497,7 @@ build/
   pipelines/                # CI/CD templates, infra as code (Bicep/Terraform)
 ```
 
-##22) Example Payloads (for Testing & Cursor)
+## 22) Example Payloads (for Testing & Cursor)
 Request
 ```json
 POST /api/v1/customers
